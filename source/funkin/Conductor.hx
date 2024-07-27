@@ -18,17 +18,38 @@ class Conductor
 {
   // onBeatHit is called every quarter note
   // onStepHit is called every sixteenth note
+  //
   // 4/4 = 4 beats per measure = 16 steps per measure
-  //   120 BPM = 120 quarter notes per minute = 2 onBeatHit per second
-  //   120 BPM = 480 sixteenth notes per minute = 8 onStepHit per second
-  //   60 BPM = 60 quarter notes per minute = 1 onBeatHit per second
-  //   60 BPM = 240 sixteenth notes per minute = 4 onStepHit per second
-  // 3/4 = 3 beats per measure = 12 steps per measure
-  //   (IDENTICAL TO 4/4 but shorter measure length)
-  //   120 BPM = 120 quarter notes per minute = 2 onBeatHit per second
-  //   120 BPM = 480 sixteenth notes per minute = 8 onStepHit per second
-  //   60 BPM = 60 quarter notes per minute = 1 onBeatHit per second
-  //   60 BPM = 240 sixteenth notes per minute = 4 onStepHit per second
+  // 120 BPM = 120 quarter notes per minute = 2 onBeatHit per second
+  // 120 BPM = 480 sixteenth notes per minute = 8 onStepHit per second
+  // 60 BPM = 60 quarter notes per minute = 1 onBeatHit per second
+  // 60 BPM = 240 sixteenth notes per minute = 4 onStepHit per second
+  //
+  // 3/4 = 3 beats per measure = 12 steps per measure (IDENTICAL TO 4/4 but shorter measure length)
+  // 120 BPM = 120 quarter notes per minute = 2 onBeatHit per second
+  // 120 BPM = 480 sixteenth notes per minute = 8 onStepHit per second
+  // 60 BPM = 60 quarter notes per minute = 1 onBeatHit per second
+  // 60 BPM = 240 sixteenth notes per minute = 4 onStepHit per second
+  //
+  // 3/8 = 3 beats per measure = 6 steps per measure
+  // 7/8 = 7 beats per measure = 14 steps per measure
+  // 5/16 = 5 beats per measure = 5 steps per measure
+  //
+  // While keeping the definition of a "step" being a sixteenth note:
+  // x/4 has 4 steps per beat, since the denominator defines which notes are counted as "beats" (In this case quarter/crotchet notes)
+  // x/2 has 8 steps per beat, since every beat is now a half/minim note.
+  // x/8 has 2 steps per beat, since every beat is now a eights/quaver note.
+  // x/16 has 1 step per beat, since every beat is now a sixteenths/semiquaver note.
+  //
+  // We could also not keep "steps" as always being sixteenths.
+  // x/4 would keep steps as sixteenth notes, however;
+  // x/2 would have steps as eighth notes,
+  // x/8 would have steps as thirty-second notes,
+  // and x/16 would have steps as sixty-fourth notes.
+  // This approach would always keep 4 steps in a beat, and would help with the "lack" of grid spaces in the chart.
+  //
+  // v This is wrong since the numerator always defines how many beats there are per measure.
+  // (The steps per measure was correct, but beats per measure was not.)
   // 7/8 = 3.5 beats per measure = 14 steps per measure
 
   /**
@@ -141,24 +162,24 @@ class Conductor
   }
 
   /**
-   * Duration of a beat (quarter note) in milliseconds. Calculated based on bpm.
+   * Duration of a beat in milliseconds. Calculated based on bpm.
    */
   public var beatLengthMs(get, never):Float;
 
   function get_beatLengthMs():Float
   {
     // Tied directly to BPM.
-    return ((Constants.SECS_PER_MIN / bpm) * Constants.MS_PER_SEC);
+    return ((Constants.SECS_PER_MIN / bpm) * Constants.MS_PER_SEC) * (4 / timeSignatureDenominator);
   }
 
   /**
-   * Duration of a step (sixtennth note) in milliseconds. Calculated based on bpm.
+   * Duration of a step in milliseconds. Calculated based on bpm.
    */
   public var stepLengthMs(get, never):Float;
 
   function get_stepLengthMs():Float
   {
-    return beatLengthMs / timeSignatureNumerator;
+    return beatLengthMs / Constants.STEPS_PER_BEAT;
   }
 
   /**
@@ -282,8 +303,8 @@ class Conductor
 
   function get_beatsPerMeasure():Float
   {
-    // NOTE: Not always an integer, for example 7/8 is 3.5 beats per measure
-    return stepsPerMeasure / Constants.STEPS_PER_BEAT;
+    // NOTE: Not always an integer?
+    return timeSignatureNumerator;
   }
 
   /**
@@ -295,7 +316,7 @@ class Conductor
   function get_stepsPerMeasure():Int
   {
     // TODO: Is this always an integer?
-    return Std.int(timeSignatureNumerator / timeSignatureDenominator * Constants.STEPS_PER_BEAT * Constants.STEPS_PER_BEAT);
+    return Std.int(timeSignatureNumerator * Constants.STEPS_PER_BEAT);
   }
 
   /**
@@ -430,7 +451,8 @@ class Conductor
     else if (currentTimeChange != null && this.songPosition > 0.0)
     {
       // roundDecimal prevents representing 8 as 7.9999999
-      this.currentStepTime = FlxMath.roundDecimal((currentTimeChange.beatTime * Constants.STEPS_PER_BEAT) + (this.songPosition - currentTimeChange.timeStamp) / stepLengthMs, 6);
+      this.currentStepTime = FlxMath.roundDecimal((currentTimeChange.beatTime * Constants.STEPS_PER_BEAT)
+        + (this.songPosition - currentTimeChange.timeStamp) / stepLengthMs, 6);
       this.currentBeatTime = currentStepTime / Constants.STEPS_PER_BEAT;
       this.currentMeasureTime = currentStepTime / stepsPerMeasure;
       this.currentStep = Math.floor(currentStepTime);
@@ -573,7 +595,7 @@ class Conductor
         }
       }
 
-      var lastStepLengthMs:Float = ((Constants.SECS_PER_MIN / lastTimeChange.bpm) * Constants.MS_PER_SEC) / timeSignatureNumerator;
+      var lastStepLengthMs:Float = ((Constants.SECS_PER_MIN / lastTimeChange.bpm) * Constants.MS_PER_SEC * (4 / timeSignatureDenominator)) / Constants.STEPS_PER_BEAT;
       var resultFractionalStep:Float = (ms - lastTimeChange.timeStamp) / lastStepLengthMs;
       resultStep += resultFractionalStep;
 
@@ -612,7 +634,7 @@ class Conductor
         }
       }
 
-      var lastStepLengthMs:Float = ((Constants.SECS_PER_MIN / lastTimeChange.bpm) * Constants.MS_PER_SEC) / timeSignatureNumerator;
+      var lastStepLengthMs:Float = ((Constants.SECS_PER_MIN / lastTimeChange.bpm) * Constants.MS_PER_SEC * (4 / timeSignatureDenominator)) / Constants.STEPS_PER_BEAT;
       resultMs += (stepTime - lastTimeChange.beatTime * Constants.STEPS_PER_BEAT) * lastStepLengthMs;
 
       return resultMs;
@@ -650,7 +672,7 @@ class Conductor
         }
       }
 
-      var lastStepLengthMs:Float = ((Constants.SECS_PER_MIN / lastTimeChange.bpm) * Constants.MS_PER_SEC) / timeSignatureNumerator;
+      var lastStepLengthMs:Float = ((Constants.SECS_PER_MIN / lastTimeChange.bpm) * Constants.MS_PER_SEC * (4 / timeSignatureDenominator)) / Constants.STEPS_PER_BEAT;
       resultMs += (beatTime - lastTimeChange.beatTime) * lastStepLengthMs * Constants.STEPS_PER_BEAT;
 
       return resultMs;

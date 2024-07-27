@@ -283,6 +283,16 @@ class ChartEditorState extends UIState // UIState derives from MusicBeatState
   public static final WELCOME_MUSIC_FADE_IN_DURATION:Float = 10.0;
 
   /**
+   * The note snapping value, varies depending on the time signature denominator.
+   */
+  var quantSnap(get, default):Int = BASE_QUANT;
+
+  function get_quantSnap():Int
+  {
+    return 4 * Conductor.instance.timeSignatureDenominator;
+  }
+
+  /**
    * INSTANCE DATA
    */
   // ==============================
@@ -567,13 +577,14 @@ class ChartEditorState extends UIState // UIState derives from MusicBeatState
 
   /**
    * The ratio of the current note snapping value to the default.
-   * For example, `32` becomes `0.5` when snapping to 16th notes.
+   * For example, `32` becomes `0.5` when snapping to a x/4 song.
+   * However, `32` becomes `1` when snapping to a x/8 song, because every step is a thirty-second note instead.
    */
   var noteSnapRatio(get, never):Float;
 
   function get_noteSnapRatio():Float
   {
-    return BASE_QUANT / noteSnapQuant;
+    return quantSnap / noteSnapQuant;
   }
 
   /**
@@ -3556,8 +3567,8 @@ class ChartEditorState extends UIState // UIState derives from MusicBeatState
 
       // Let's try testing only notes within a certain range of the view area.
       // TODO: I don't think this messes up really long sustains, does it?
-      var viewAreaTopMs:Float = scrollPositionInMs - (Conductor.instance.measureLengthMs * 2); // Is 2 measures enough?
-      var viewAreaBottomMs:Float = scrollPositionInMs + (Conductor.instance.measureLengthMs * 2); // Is 2 measures enough?
+      var viewAreaTopMs:Float = scrollPositionInMs - (Conductor.instance.measureLengthMs * 3); // Is 2 measures enough? No.
+      var viewAreaBottomMs:Float = scrollPositionInMs + (Conductor.instance.measureLengthMs * 3); // Is 2 measures enough? No, again.
 
       // Add notes that are now visible.
       for (noteData in currentSongChartNoteData)
@@ -5107,23 +5118,25 @@ class ChartEditorState extends UIState // UIState derives from MusicBeatState
     }
 
     var songPos:Float = Conductor.instance.songPosition + Conductor.instance.instrumentalOffset;
+    var songPosMilliseconds:String = Std.string(Math.floor((Math.abs(songPos) % 1000))).lpad('0', 3);
     var songPosSeconds:String = Std.string(Math.floor((Math.abs(songPos) / 1000) % 60)).lpad('0', 2);
     var songPosMinutes:String = Std.string(Math.floor((Math.abs(songPos) / 1000) / 60)).lpad('0', 2);
     if (songPos < 0) songPosMinutes = '-' + songPosMinutes;
-    var songPosString:String = '${songPosMinutes}:${songPosSeconds}';
+    var songPosString:String = '${songPosMinutes}:${songPosSeconds}.${songPosMilliseconds}';
 
     if (playbarSongPos.value != songPosString) playbarSongPos.value = songPosString;
 
     var songRemaining:Float = Math.max(songLengthInMs - songPos, 0.0);
+    var songRemainingMilliseconds:String = Std.string(Math.floor((songRemaining % 1000))).lpad('0', 3);
     var songRemainingSeconds:String = Std.string(Math.floor((songRemaining / 1000) % 60)).lpad('0', 2);
     var songRemainingMinutes:String = Std.string(Math.floor((songRemaining / 1000) / 60)).lpad('0', 2);
-    var songRemainingString:String = '-${songRemainingMinutes}:${songRemainingSeconds}';
+    var songRemainingString:String = '-${songRemainingMinutes}:${songRemainingSeconds}.${songRemainingMilliseconds}';
 
     if (playbarSongRemaining.value != songRemainingString) playbarSongRemaining.value = songRemainingString;
 
-    playbarNoteSnap.text = '1/${noteSnapQuant}';
+    playbarNoteSnap.text = 'Snap: 1/${noteSnapQuant}';
     playbarDifficulty.text = '${selectedDifficulty.toTitleCase()}';
-    playbarBPM.text = 'BPM: ${(Conductor.instance.bpm ?? 0.0)}';
+    playbarBPM.text = 'BPM: ${(Conductor.instance.bpm ?? 0.0)} in ${(Conductor.instance.timeSignatureNumerator ?? 4)}/${(Conductor.instance.timeSignatureDenominator ?? 4)}';
   }
 
   function handlePlayhead():Void
@@ -5646,6 +5659,7 @@ class ChartEditorState extends UIState // UIState derives from MusicBeatState
   function handleQuickWatch():Void
   {
     FlxG.watch.addQuick('musicTime', audioInstTrack?.time ?? 0.0);
+    FlxG.watch.addQuick('musicLength', audioInstTrack?.length ?? 0.0);
 
     FlxG.watch.addQuick('noteKindToPlace', noteKindToPlace);
     FlxG.watch.addQuick('eventKindToPlace', eventKindToPlace);
@@ -6067,6 +6081,9 @@ class ChartEditorState extends UIState // UIState derives from MusicBeatState
 
         var nextDifficulty = availableDifficulties[0];
         selectedDifficulty = nextDifficulty;
+
+        Conductor.instance.mapTimeChanges(this.currentSongMetadata.timeChanges);
+        updateTimeSignature();
 
         this.refreshToolbox(CHART_EDITOR_TOOLBOX_METADATA_LAYOUT);
         this.refreshToolbox(CHART_EDITOR_TOOLBOX_DIFFICULTY_LAYOUT);
