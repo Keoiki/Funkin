@@ -3601,8 +3601,8 @@ class ChartEditorState extends UIState // UIState derives from MusicBeatState
       // Let's try testing only notes within a certain range of the view area.
       // TODO: I don't think this messes up really long sustains, does it?
       // Only at Numerator of 1 do we need to extend the view area. Though, who makes songs with 1 beat in a measure???
-      var viewAreaTopMs:Float = scrollPositionInMs - (Conductor.instance.measureLengthMs * (Condcutor.instance.timeSignatureNumerator == 1 ? 4 : 2));
-      var viewAreaBottomMs:Float = scrollPositionInMs + (Conductor.instance.measureLengthMs * (Condcutor.instance.timeSignatureNumerator == 1 ? 4 : 2));
+      var viewAreaTopMs:Float = scrollPositionInMs - (Conductor.instance.measureLengthMs * (Conductor.instance.timeSignatureNumerator == 1 ? 4 : 2));
+      var viewAreaBottomMs:Float = scrollPositionInMs + (Conductor.instance.measureLengthMs * (Conductor.instance.timeSignatureNumerator == 1 ? 4 : 2));
 
       // Add notes that are now visible.
       for (noteData in currentSongChartNoteData)
