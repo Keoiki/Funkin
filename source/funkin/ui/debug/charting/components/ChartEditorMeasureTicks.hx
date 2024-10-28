@@ -33,7 +33,7 @@ class ChartEditorMeasureTicks extends FlxTypedSpriteGroup<FlxSprite>
     tickTiledSprite = new FlxTiledSprite(chartEditorState.measureTickBitmap, chartEditorState.measureTickBitmap.width, 1000, false, true);
     add(tickTiledSprite);
 
-    for (i in 1...5)
+    for (i in 1...6)
     {
       measureNumber = new FlxText(0, 0, ChartEditorState.GRID_SIZE, "1");
       measureNumber.setFormat(Paths.font('vcr.ttf'), 20, FlxColor.WHITE);
@@ -51,7 +51,8 @@ class ChartEditorMeasureTicks extends FlxTypedSpriteGroup<FlxSprite>
 
   /**
    * At time of writing, we only have to manipulate one measure number because we can only see one measure at a time.
-   * Update on this, now we have 4! Beats are always 4 grid spaces long so we won't ever see a 5th number.
+   * Update on this, now we have 5! Beats are always 4 grid spaces long so we won't ever see a 6th number.
+   * You CAN see 5 measures at once if you scroll to the right spot, ooops!
    */
   function updateMeasureNumber()
   {
