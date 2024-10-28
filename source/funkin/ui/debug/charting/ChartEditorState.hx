@@ -595,7 +595,7 @@ class ChartEditorState extends UIState // UIState derives from MusicBeatState
 
   function get_noteSnapRatio():Float
   {
-    return BASE_QUANT / noteSnapQuant;
+    return BASE_QUANT / (noteSnapQuant * 4 / Conductor.instance.timeSignatureDenominator);
   }
 
   /**
