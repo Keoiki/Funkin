@@ -16,8 +16,8 @@ import flixel.sound.FlxSound;
 @:nullSafety
 class Conductor
 {
-  // onBeatHit is called every quarter note
-  // onStepHit is called every sixteenth note
+  // onBeatHit is called on every note determined by the denominator (4 = quarter, 8 = eighth, etc.)
+  // onStepHit is called on every note which is a quarter of a beat (4 = sixteenth, 8 = thirty-second, etc.)
   // 4/4 = 4 beats per measure = 16 steps per measure
   //   120 BPM = 120 quarter notes per minute = 2 onBeatHit per second
   //   120 BPM = 480 sixteenth notes per minute = 8 onStepHit per second
@@ -29,7 +29,19 @@ class Conductor
   //   120 BPM = 480 sixteenth notes per minute = 8 onStepHit per second
   //   60 BPM = 60 quarter notes per minute = 1 onBeatHit per second
   //   60 BPM = 240 sixteenth notes per minute = 4 onStepHit per second
-  // 7/8 = 3.5 beats per measure = 14 steps per measure
+  // 7/8 = 7 beats per measure = 28 steps per measure
+  //   Beats are EIGHTH NOTES!!
+  //   (IDENTICAL TO 7/4 but beats happen twice as fast)
+  //   120 BPM = 240 eighth notes per minute = 4 onBeatHit per second
+  //   120 BPM = 960 twenty-second notes per minute = 16 onStepHit per second
+  // 15/16 = 15 beats per measure = 60 steps per measure
+  //   Beats are SIXTEENTH NOTES!!
+  //   120 BPM = 480 sixteenth notes per minute = 8 onBeatHit per second
+  //   120 BPM = 1920 sixty-fourth notes per minute = 32 onStepHit per second (holy moly)
+  // 3/2 = 3 beats per measure = 12 steps per measure
+  //   Beats are HALF NOTES!!
+  //   120 BPM = 60 half notes per minute = 1 onBeatHit per second
+  //   120 BPM = 240 eighth notes per minute = 4 onStepHit per second
 
   /**
    * The current instance of the Conductor.
