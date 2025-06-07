@@ -8,6 +8,7 @@ import funkin.ui.debug.charting.commands.ModifyTimeChangeCommand;
 import funkin.ui.debug.charting.commands.RemoveTimeChangeCommand;
 import funkin.ui.debug.charting.util.ChartEditorDropdowns;
 import haxe.ui.components.Button;
+import haxe.ui.components.CheckBox;
 import haxe.ui.components.DropDown;
 import haxe.ui.components.Label;
 import haxe.ui.components.NumberStepper;
@@ -36,6 +37,9 @@ class ChartEditorMetadataToolbox extends ChartEditorBaseToolbox
   var inputBPM:NumberStepper;
   var labelTimeStamp:Label;
   var inputTimeStamp:NumberStepper;
+  var inputGradualBPMShift:CheckBox;
+  var inputGradualBPM:NumberStepper;
+  var inputGradualTimeStamp:NumberStepper;
   var labelScrollSpeed:Label;
   var inputScrollSpeed:Slider;
   var frameVariation:Frame;
@@ -193,8 +197,7 @@ class ChartEditorMetadataToolbox extends ChartEditorBaseToolbox
       if (numerator == prevNumerator) return;
 
       chartEditorState.performCommand(new ModifyTimeChangeCommand(inputTimeChange.selectedIndex, currentTimeChange.timeStamp, currentTimeChange.bpm,
-        numerator,
-        currentTimeChange.timeSignatureDen));
+        numerator, currentTimeChange.timeSignatureDen));
       inputTimeChange.value.text = '${currentTimeChange.timeStamp} : BPM: ${currentTimeChange.bpm} in ${numerator}/${currentTimeChange.timeSignatureDen}';
       tcDropdownItemRenderer.data = inputTimeChange.value;
     }
@@ -210,6 +213,16 @@ class ChartEditorMetadataToolbox extends ChartEditorBaseToolbox
         currentTimeChange.timeSignatureNum, denominator));
       inputTimeChange.value.text = '${currentTimeChange.timeStamp} : BPM: ${currentTimeChange.bpm} in ${currentTimeChange.timeSignatureNum}/${denominator}';
       tcDropdownItemRenderer.data = inputTimeChange.value;
+    }
+
+    inputGradualBPMShift.onChange = function(event:UIEvent) {
+      if (event.selected == null) return;
+
+      labelGradualBPM.hidden = event.selected;
+      inputGradualBPM.hidden = event.selected;
+      labelGradualBPMTimeStamp.hidden = event.selected;
+      inputGradualBPMTimeStamp.hidden = event.selected;
+      // inputGradualBPMEase.hidden = event.selected;
     }
 
     addTimeChange.onClick = function(_:UIEvent) {

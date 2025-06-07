@@ -3,6 +3,7 @@ package funkin;
 import funkin.util.Constants;
 import flixel.util.FlxSignal;
 import flixel.math.FlxMath;
+import flixel.tweens.FlxEase.EaseFunction;
 import funkin.data.song.SongData.SongTimeChange;
 import funkin.data.song.SongDataUtils;
 import funkin.save.Save;
@@ -108,6 +109,30 @@ class Conductor
   var prevTime:Float = 0;
 
   /**
+   * Whether we're in a gradual BPM change right now.
+   */
+  public var inGradualBPMChange(get, never):Bool;
+
+  function get_inGradualBPMChange():Bool
+  {
+    if (currentTimeChange == null) return false;
+
+    return currentTimeChange.isGradualBPMChange;
+  }
+
+  /**
+   * The ease function to use for the current gradual BPM change.
+   */
+  public var bpmEaseFunction(get, null):EaseFunction;
+
+  function get_bpmEaseFunction():EaseFunction
+  {
+    if (currentTimeChange == null) return Reflect.field(FlxEase, "linear");
+
+    return Reflect.field(FlxEase, currentTimeChange.gradualBPMChange.ease);
+  }
+
+  /**
    * Beats per minute of the current song at the current time.
    */
   public var bpm(get, never):Float;
@@ -117,6 +142,16 @@ class Conductor
     if (bpmOverride != null) return bpmOverride;
 
     if (currentTimeChange == null) return Constants.DEFAULT_BPM;
+
+    if (inGradualBPMChange)
+    {
+      var duration:Float = (currentTimeChange.gradualBPMChange.endTime - currentTimeChange.timeStamp) / 1000;
+      var timeSoFar:Float = (songPosition - currentTimeChange.timeStamp) / 1000;
+      var scale:Float = Math.max(timeSoFar, 0) / duration;
+      scale = bpmEaseFunction(scale);
+      var bpmDiff:Float = currentTimeChange.gradualBPMChange.targetBPM - currentTimeChange.bpm;
+      return currentTimeChange.bpm + (bpmDiff * scale);
+    }
 
     return currentTimeChange.bpm;
   }
@@ -814,6 +849,26 @@ class Conductor
       }
     }
     return new SongTimeChange(0, 100);
+  }
+
+  /**
+   * An all-in-one function for getting either a step, beat, or measure's length in milliseconds from a given time change.
+   * @param type The type of length to return. Either "step", "beat", or "measure" works, along with their first character.
+   * @param bpm The BPM of the song.
+   * @param numerator The numerator of the time signature.
+   * @param denominator The denominator of the time signature.
+   * @return The length of a step/beat/measure in milliseconds.
+   */
+  public function getTypeLengthFromTimeChange(type:String = "beat", bpm:Float, numerator:Int, denominator:Int):Float
+  {
+    var wantedBeatLengthMs:Float = ((Constants.SECS_PER_MIN / bpm) * Constants.MS_PER_SEC) * (4 / denominator);
+    return switch (type.toLowerCase())
+    {
+      case "measure", "m": wantedBeatLengthMs * numerator;
+      case "beat", "b": wantedBeatLengthMs;
+      case "step", "s": wantedBeatLengthMs / Constants.STEPS_PER_BEAT;
+      default: wantedBeatLengthMs;
+    }
   }
 
   /**

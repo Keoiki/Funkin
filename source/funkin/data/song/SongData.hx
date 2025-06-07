@@ -205,7 +205,22 @@ class SongTimeChange implements ICloneable<SongTimeChange>
   @:alias("bt")
   public var beatTuplets:Array<Int>;
 
-  public function new(timeStamp:Float, bpm:Float, timeSignatureNum:Int = 4, timeSignatureDen:Int = 4, ?beatTime:Float, ?beatTuplets:Array<Int>)
+  /**
+   * Whether or not this time changes has a gradual BPM change.
+   */
+  @:optional
+  @:alias("isgradbpm")
+  public var isGradualBPMChange:Bool;
+
+  /**
+   * Gradual BPM change.
+   */
+  @:optional
+  @:alias("gradbpm")
+  public var gradualBPMChange:SongGradualBPMChange;
+
+  public function new(timeStamp:Float, bpm:Float, timeSignatureNum:Int = 4, timeSignatureDen:Int = 4, ?isGradualBPMChange:Bool,
+      ?gradualBPMChange:SongGradualBPMChange, ?beatTime:Float, ?beatTuplets:Array<Int>)
   {
     this.timeStamp = timeStamp;
     this.bpm = bpm;
@@ -213,13 +228,17 @@ class SongTimeChange implements ICloneable<SongTimeChange>
     this.timeSignatureNum = timeSignatureNum;
     this.timeSignatureDen = timeSignatureDen;
 
-    this.beatTime = beatTime == null ? DEFAULT_BEAT_TIME : beatTime;
-    this.beatTuplets = beatTuplets == null ? DEFAULT_BEAT_TUPLETS : beatTuplets;
+    this.isGradualBPMChange = isGradualBPMChange ?? false;
+    this.gradualBPMChange = gradualBPMChange ?? new SongGradualBPMChange();
+
+    this.beatTime = beatTime ?? DEFAULT_BEAT_TIME;
+    this.beatTuplets = beatTuplets ?? DEFAULT_BEAT_TUPLETS;
   }
 
   public function clone():SongTimeChange
   {
-    return new SongTimeChange(this.timeStamp, this.bpm, this.timeSignatureNum, this.timeSignatureDen, this.beatTime, this.beatTuplets);
+    return new SongTimeChange(this.timeStamp, this.bpm, this.timeSignatureNum, this.timeSignatureDen, this.isGradualBPMChange, this.gradualBPMChange.clone(),
+      this.beatTime, this.beatTuplets);
   }
 
   /**
@@ -228,6 +247,46 @@ class SongTimeChange implements ICloneable<SongTimeChange>
   public function toString():String
   {
     return 'SongTimeChange(${this.timeStamp}ms,${this.bpm}bpm)';
+  }
+}
+
+class SongGradualBPMChange implements ICloneable<SongGradualBPMChange>
+{
+  /**
+   * The target BPM of the gradual BPM change.
+   */
+  @:default(0)
+  @:optional
+  @:alias("gbt")
+  public var targetBPM:Float;
+
+  /**
+   * Ending time of the BPM change in milliseconds.
+   */
+  @:default(0)
+  @:optional
+  @:alias("gbl")
+  public var endTime:Float;
+
+  /**
+   * The easing of the BPM change.
+   * No custom curves because I don't know how to do that, sorry!
+   */
+  @:default("linear")
+  @:optional
+  @:alias("gbe")
+  public var ease:String;
+
+  public function new(targetBPM:Float = 100, endTime:Float = 0, ease:String = "linear")
+  {
+    this.targetBPM = targetBPM;
+    this.endTime = endTime;
+    this.ease = ease;
+  }
+
+  public function clone():SongGradualBPMChange
+  {
+    return new SongGradualBPMChange(this.targetBPM, this.endTime, this.ease);
   }
 }
 
